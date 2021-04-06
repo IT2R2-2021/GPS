@@ -1,0 +1,130 @@
+/*
+Projet : Voiture Autonome
+Carte : Principal
+Groupe : IT2R2
+Contributeur :
+	Jonasz Sanglier & Babou la street
+*/
+#define osObjectsPublic                     // define objects in main module
+#include "osObjects.h"                      // RTOS object definitions
+#include <string.h>
+#include "stdio.h"
+#include "Driver_CAN.h"                 // ::CMSIS Driver:CAN
+#include "Driver_USART.h"  
+#include "Board_GLCD.h"                 // ::Board Support:Graphic LCD
+#include "GLCD_Config.h"
+#include "uart.h"  // Keil.MCB1700::Board Support:Graphic LCD// ::CMSIS Driver:USART
+//variable globale
+extern ARM_DRIVER_USART Driver_USART1;
+extern GLCD_FONT GLCD_Font_6x8;
+extern GLCD_FONT GLCD_Font_16x24;
+osThreadId ID_TacheGPS ;
+//Prototype de fonction
+void maFonction(char *ptrSrc,char *ptrDst);
+void GPS(void const*argument);
+osThreadDef(GPS,osPriorityNormal,1,0);
+//Main
+int main()
+{
+//Initialisation
+	Init_UART();
+	GLCD_Initialize();
+	GLCD_ClearScreen();
+	GLCD_SetFont(&GLCD_Font_6x8);
+
+ GLCD_DrawRectangle (0, 130, 50, 110);//G
+ GLCD_DrawRectangle (270, 20, 40, 110);//C
+ GLCD_DrawRectangle (20, 0, 50, 110);//H
+ GLCD_DrawRectangle (100, 110, 170, 40);//E
+ GLCD_DrawRectangle (75, 180, 150, 50);//GMP
+ GLCD_DrawRectangle (170, 20, 100, 20);//Secrétéria
+ GLCD_DrawRectangle (170, 20, 20, 70);//Amphi
+
+//OS
+	osKernelInitialize();
+	
+	ID_TacheGPS = osThreadCreate(osThread(GPS),NULL);
+	
+	osKernelStart();
+	
+	osDelay(osWaitForever);
+	
+	return 0;
+}
+		
+void GPS (void const*argument)
+{
+
+	uint8_t tab[1];
+	char tab2[35],latitude[20],longitude[20];
+	char donneelati[50],donneelongi[50];
+	char ETAT=0;
+	int i=0;
+	
+	while(1)
+	{
+		
+		Driver_USART1.Receive(tab,1);
+		while (Driver_USART1.GetRxCount() <1 ) ; // on attend que 1 case soit pleine
+		//GLCD_DrawString(10,10,"yo");
+		switch (ETAT)
+		{
+			case 0:
+					if (tab[0]=='$') ETAT=1;	
+					break;
+			case 1:
+					if (tab[0]=='G') ETAT=2;	
+					else ETAT=0;
+					break;
+			case 2:
+					if (tab[0]=='P') ETAT=3;	
+					else ETAT=0;
+					break;
+			case 3:
+					if (tab[0]=='G') ETAT=4;	
+					else ETAT=0;
+					break;
+			case 4:
+					if (tab[0]=='G') ETAT=5;	
+					else ETAT=0;
+					break;
+			case 5:
+					if (tab[0]=='A') ETAT=6;	
+					else ETAT=0;
+					break;
+			case 6:
+					Driver_USART1.Receive(tab2,35);
+			
+			if (tab2[11]==',')
+			{
+//				GLCD_ClearScreen();
+//				GLCD_DrawString(1,1,"latitude = perdu");
+//				GLCD_DrawString(1,50,"longitude = perdu");
+			}
+			else
+			{
+				  maFonction(tab2+11,latitude);
+			    maFonction(tab2+23,longitude);
+					sprintf(donneelati,"latitude = %s",latitude);
+					sprintf(donneelongi,"longitude = %s",longitude);
+//					GLCD_DrawString(1,1,donneelati);
+//				  GLCD_DrawString(1,50,donneelongi);
+//					GLCD_DrawString(1,100,tab2);
+			}
+					ETAT = 0;
+					break;
+			}
+	}
+}
+
+void maFonction(char *ptrSrc,char *ptrDst)
+{
+	int i;
+	for(i=0;*(ptrSrc+i)!=',';i++)
+	{
+		*(ptrDst+i)=*(ptrSrc+i);
+	}
+	*(ptrDst+i)=*(ptrSrc+i);
+	*(ptrDst+i+1)=*(ptrSrc+i+1);
+	*(ptrDst+i+2)='\0';
+}
