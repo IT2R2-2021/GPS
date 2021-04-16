@@ -1,0 +1,143 @@
+/*
+Projet : Voiture Autonome
+Carte : Principal
+Groupe : IT2R2
+Contributeur :
+	Jonasz Sanglier & Babou la street
+*/
+#define osObjectsPublic                     // define objects in main module
+#include "osObjects.h"                      // RTOS object definitions
+#include <string.h>
+#include "stdio.h"
+#include "Driver_CAN.h"                 // ::CMSIS Driver:CAN
+#include "Driver_USART.h"  
+#include "Board_GLCD.h"                 // ::Board Support:Graphic LCD
+#include "GLCD_Config.h"
+#include "uart.h"  // Keil.MCB1700::Board Support:Graphic LCD// ::CMSIS Driver:USART
+//variable globale
+extern ARM_DRIVER_USART Driver_USART1;
+extern GLCD_FONT GLCD_Font_6x8;
+extern GLCD_FONT GLCD_Font_16x24;
+osThreadId ID_TacheGPS ;
+//Prototype de fonction
+void maFonction(char *ptrSrc,char *ptrDst);
+void GPS(void const*argument);
+osThreadDef(GPS,osPriorityNormal,1,0);
+//Main
+int main()
+{
+//Initialisation
+	Init_UART();
+	GLCD_Initialize();
+	GLCD_ClearScreen();
+	GLCD_SetFont(&GLCD_Font_6x8);
+
+//OS
+	osKernelInitialize();
+	
+	ID_TacheGPS = osThreadCreate(osThread(GPS),NULL);
+	osKernelStart();
+	osDelay(osWaitForever);
+	
+	return 0;
+}
+		
+void GPS (void const*argument)
+{
+ float degLati, degLongi;
+ int pixLati, pixLongi;
+	char pixLongiLati[2];
+ float convM = 1.855/ 111319;
+	uint8_t tab[1];
+	char tab2[35],latitude[20],longitude[20];
+	char donneelati[50],donneelongi[50];
+	char ETAT=0;
+	int i=0;
+	
+	while(1)
+	{
+		
+		Driver_USART1.Receive(tab,1);
+		while (Driver_USART1.GetRxCount() <1 ) ; // on attend que 1 case soit pleine
+		switch (ETAT)
+		{
+			case 0:
+					if (tab[0]=='$') ETAT=1;	
+					break;
+			case 1:
+					if (tab[0]=='G') ETAT=2;	
+					else ETAT=0;
+					break;
+			case 2:
+					if (tab[0]=='P') ETAT=3;	
+					else ETAT=0;
+					break;
+			case 3:
+					if (tab[0]=='G') ETAT=4;	
+					else ETAT=0;
+					break;
+			case 4:
+					if (tab[0]=='G') ETAT=5;	
+					else ETAT=0;
+					break;
+			case 5:
+					if (tab[0]=='A') ETAT=6;	
+					else ETAT=0;
+					break;
+			case 6:
+					Driver_USART1.Receive(tab2,35);
+			
+			if (tab2[11]==',')
+			{
+
+			}
+			else
+			{
+				  maFonction(tab2+11,latitude);
+	 	      maFonction(tab2+23,longitude);
+				  
+					degLati = latitude[0]*10 + latitude[1] + latitude[2]*convM*10 + latitude[3]*convM + latitude[5]*convM*0.1 + latitude[6]*convM*0.01 + latitude[7]*convM*0.001 + latitude[8]*convM*0.0001;
+					degLongi = longitude[0]*100 + longitude[1]*10 + longitude[2]*convM + longitude[3]*convM*10 + longitude[4]*convM + longitude[6]*convM*0.1 + longitude[7]*convM*0.01 + longitude[8]*convM*0.001 + longitude[9]*convM*0.0001 ;
+				  pixLati = (degLati- 48.788358)/ 0.0000114+32;
+				  pixLongi = (degLongi- 2.327059)/ 0.0000034+10;
+				  
+			    if ( degLati > 48.788350 & degLongi < 2.327065)
+					{ pixLati=32;
+						pixLongi= 10;}
+					else if (degLongi< 2.327065)
+					{pixLongi=10;}
+					else if (degLati< 48.786800 & degLongi < 2.327065)
+					{ pixLongi = 10;
+						pixLati = 272;}
+					else if ( degLati< 48.786800)
+					{pixLati = 272;}
+					else if ( degLati<48.786800 & degLongi >2.329800)
+					{ pixLati = 272;
+						pixLongi=470;}
+					else if (degLongi>2.329800)
+					{pixLongi=470;}
+					else if (degLati>48.788350 & degLongi>2.329800)
+					{pixLati=32;
+						pixLongi=470;}
+					else if(degLati>48.788350)
+					{degLati=32;}
+					pixLongiLati[0]=pixLongi;
+					pixLongiLati[1]=pixLati;
+			}
+					ETAT = 0;
+					break;
+			}
+	}
+}
+
+void maFonction(char *ptrSrc,char *ptrDst)
+{
+	int i;
+	for(i=0;*(ptrSrc+i)!=',';i++)
+	{
+		*(ptrDst+i)=*(ptrSrc+i);
+	}
+	*(ptrDst+i)=*(ptrSrc+i);
+	*(ptrDst+i+1)=*(ptrSrc+i+1);
+	*(ptrDst+i+2)='\0';
+}
