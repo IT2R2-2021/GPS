@@ -102,26 +102,26 @@ void GPS (void const*argument)
 				  pixLati = (degLati- 48.788358)/ (0.0000111)+113;
 				  pixLongi = (degLongi- 2.327059)/ (0.00000537)+14;
 				  
-			    if ( degLati > 48.788350 & degLongi < 2.327065)
-					{ pixLati=14;
+			    		if ( degLati > 48.788350 & degLongi < 2.327065)
+						{ pixLati=14;
 						pixLongi= 113;}
 					else if (degLongi< 2.327065)
-					{pixLongi=14;}
+						{pixLongi=14;}
 					else if (degLati< 48.786800 & degLongi < 2.327065)
-					{ pixLongi = 14;
+						{ pixLongi = 14;
 						pixLati = 262;}
 					else if ( degLati< 48.786800)
-					{pixLati = 262;}
+						{pixLati = 262;}
 					else if ( degLati<48.786800 & degLongi >2.329800)
-					{ pixLati = 262;
+						{ pixLati = 262;
 						pixLongi=404;}
 					else if (degLongi>2.329800)
-					{pixLongi=404;}
+						{pixLongi=404;}
 					else if (degLati>48.788350 & degLongi>2.329800)
-					{pixLati=14;
+						{pixLati=14;
 						pixLongi=404;}
 					else if(degLati>48.788350)
-					{degLati=14;}
+						{degLati=14;}
 					pixLongiLati[0]=pixLongi;
 					pixLongiLati[1]=pixLati;
 			}
