@@ -95,7 +95,7 @@ void GPS (void const*argument)
 			else
 			{
 				  maFonction(tab2+11,latitude);
-	 	      maFonction(tab2+23,longitude);
+	 	     		  maFonction(tab2+23,longitude);
 				  
 					degLati = latitude[0]*10 + latitude[1] + latitude[2]*convM*10 + latitude[3]*convM + latitude[5]*convM*0.1 + latitude[6]*convM*0.01 + latitude[7]*convM*0.001 + latitude[8]*convM*0.0001;
 					degLongi = longitude[0]*100 + longitude[1]*10 + longitude[2]*convM + longitude[3]*convM*10 + longitude[4]*convM + longitude[6]*convM*0.1 + longitude[7]*convM*0.01 + longitude[8]*convM*0.001 + longitude[9]*convM*0.0001 ;
